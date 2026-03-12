@@ -14,7 +14,11 @@
                 </template>
             </el-table-column>
             <el-table-column prop="description" label="描述" show-overflow-tooltip />
-            <el-table-column prop="created_at" label="创建时间" width="180" />
+            <el-table-column label="创建时间" width="180">
+                <template #default="{ row }">
+                    {{ formatDate(row.created_at) }}
+                </template>
+            </el-table-column>
             <el-table-column label="操作" width="200">
                 <template #default="{ row }">
                     <el-button size="small" @click="handleEdit(row)">编辑</el-button>
@@ -52,7 +56,13 @@ import { ref, onMounted } from 'vue'                // 1. 导入 onMounted
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
+dayjs.locale('zh-cn')
 
+const formatDate = (isoString) => {
+    return dayjs(isoString).format('YYYY-MM-DD HH:mm')
+}
 const router = useRouter()
 const user = ref(null)
 const projects = ref([])
@@ -154,7 +164,7 @@ const saveProject = async () => {
             await loadProjects()
         }
     }
-    dialogVisible.value = false   
+    dialogVisible.value = false
 }
 
 // ---------- 删除项目 ----------

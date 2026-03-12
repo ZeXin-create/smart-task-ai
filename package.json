@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
+    "dayjs": "^1.11.20",
     "echarts": "^6.0.0",
     "element-plus": "^2.13.5",
     "vue": "^3.5.25",
