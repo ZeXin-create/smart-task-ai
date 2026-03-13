@@ -66,7 +66,6 @@
                 </draggable>
             </div>
         </div>
-        <!-- 对话框保持不变 -->
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
             <el-form :model="taskForm" label-width="80px">
                 <el-form-item label="任务标题" required>
@@ -88,13 +87,12 @@
                 <el-form-item label="截止日期">
                     <el-date-picker v-model="taskForm.due_date" type="date" placeholder="选择日期" format="YYYY-MM-DD" />
                 </el-form-item>
+                <!-- 这里是正确的描述输入框位置 -->
+                <el-form-item label="任务描述">
+                    <el-input v-model="taskForm.description" type="textarea" rows="3" placeholder="AI可自动生成描述" />
+                </el-form-item>
             </el-form>
-            <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="dialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="saveTask">确定</el-button>
-                </span>
-            </template>
+            <template #footer>...</template>
         </el-dialog>
     </div>
 </template>
@@ -128,7 +126,7 @@ const taskForm = ref({
     title: '',
     status: 'pending',
     due_date: '',
-    description: '',   
+    description: '',
 })
 const pendingTasks = ref([])
 const doingTasks = ref([])
@@ -187,37 +185,37 @@ const loadTasks = async () => {
 
 // AI生成描述函数
 const generateDescription = async () => {
-  if (!taskForm.value.title.trim()) {
-    ElMessage.warning('请先输入任务标题')
-    return
-  }
-
-  aiLoading.value = true
-  try {
-    const response = await fetch('/api/generate-description', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: taskForm.value.title })
-    })
-
-    const data = await response.json()
-    
-    if (response.ok) {
-      taskForm.value.description = data.description
-      ElMessage.success('描述生成成功')
-    } else {
-      ElMessage.error(data.error || '生成失败')
+    if (!taskForm.value.title.trim()) {
+        ElMessage.warning('请先输入任务标题')
+        return
     }
-  } catch (error) {
-    ElMessage.error('网络错误：' + error.message)
-  } finally {
-    aiLoading.value = false
-  }
+
+    aiLoading.value = true
+    try {
+        const response = await fetch('/api/generate-description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: taskForm.value.title })
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+            taskForm.value.description = data.description
+            ElMessage.success('描述生成成功')
+        } else {
+            ElMessage.error(data.error || '生成失败')
+        }
+    } catch (error) {
+        ElMessage.error('网络错误：' + error.message)
+    } finally {
+        aiLoading.value = false
+    }
 }
 // ---------- 打开新建对话框 ----------
 const handleCreateTask = () => {
     dialogTitle.value = '新建任务'
-    taskForm.value = { id: null, title: '', description: '',status: 'pending', due_date: '' }
+    taskForm.value = { id: null, title: '', description: '', status: 'pending', due_date: '' }
     dialogVisible.value = true
 }
 
@@ -264,7 +262,7 @@ const saveTask = async () => {
                 title: taskForm.value.title,
                 status: taskForm.value.status,
                 due_date: taskForm.value.due_date,
-                description: taskForm.value.description  
+                description: taskForm.value.description
             })
             .eq('id', taskForm.value.id)
         if (error) {
@@ -284,7 +282,7 @@ const saveTask = async () => {
                 due_date: taskForm.value.due_date,
                 project_id: projectId,
                 assignee_id: user.value?.id,
-                description: taskForm.value.description  
+                description: taskForm.value.description
             }])
         if (error) {
             ElMessage.error('创建失败：' + error.message)
