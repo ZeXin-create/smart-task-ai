@@ -70,7 +70,13 @@
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
             <el-form :model="taskForm" label-width="80px">
                 <el-form-item label="任务标题" required>
-                    <el-input v-model="taskForm.title" placeholder="请输入任务标题" />
+                    <div style="display: flex; gap: 8px;">
+                        <el-input v-model="taskForm.title" placeholder="请输入任务标题" />
+                        <el-button type="primary" :loading="aiLoading" @click="generateDescription"
+                            :disabled="!taskForm.title.trim()">
+                            AI 助手
+                        </el-button>
+                    </div>
                 </el-form-item>
                 <el-form-item label="状态">
                     <el-select v-model="taskForm.status" placeholder="请选择">
@@ -104,6 +110,7 @@ const dashboardRef = ref(null)
 const dragging = ref(false)  // 是否正在拖拽更新
 const user = ref(null)
 const route = useRoute()
+const aiLoading = ref(false)
 const loading = ref(false)
 const router = useRouter()
 const projectId = route.params.projectId
@@ -120,7 +127,8 @@ const taskForm = ref({
     id: null,
     title: '',
     status: 'pending',
-    due_date: ''
+    due_date: '',
+    description: '',   
 })
 const pendingTasks = ref([])
 const doingTasks = ref([])
@@ -143,13 +151,14 @@ const handleDragChange = async (event, targetStatus) => {
             ElMessage.error('更新状态失败：' + error.message)
             movedTask.status = originalStatus
             await loadTasks()
-        }else{
-             dashboardRef.value?.fetchStats()
+        } else {
+            dashboardRef.value?.fetchStats()
         }
 
         dragging.value = false
     }
 }
+
 const goBack = () => {
     router.push('/aiHome')
 }
@@ -170,15 +179,45 @@ const loadTasks = async () => {
         doingTasks.value = data.filter(t => t.status === 'doing')
         doneTasks.value = data.filter(t => t.status === 'done')
     }
-    
+
     loading.value = false
     dashboardRef.value?.fetchStats()
 
 }
+
+// AI生成描述函数
+const generateDescription = async () => {
+  if (!taskForm.value.title.trim()) {
+    ElMessage.warning('请先输入任务标题')
+    return
+  }
+
+  aiLoading.value = true
+  try {
+    const response = await fetch('/api/generate-description', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: taskForm.value.title })
+    })
+
+    const data = await response.json()
+    
+    if (response.ok) {
+      taskForm.value.description = data.description
+      ElMessage.success('描述生成成功')
+    } else {
+      ElMessage.error(data.error || '生成失败')
+    }
+  } catch (error) {
+    ElMessage.error('网络错误：' + error.message)
+  } finally {
+    aiLoading.value = false
+  }
+}
 // ---------- 打开新建对话框 ----------
 const handleCreateTask = () => {
     dialogTitle.value = '新建任务'
-    taskForm.value = { id: null, title: '', status: 'pending', due_date: '' }
+    taskForm.value = { id: null, title: '', description: '',status: 'pending', due_date: '' }
     dialogVisible.value = true
 }
 
@@ -225,6 +264,7 @@ const saveTask = async () => {
                 title: taskForm.value.title,
                 status: taskForm.value.status,
                 due_date: taskForm.value.due_date,
+                description: taskForm.value.description  
             })
             .eq('id', taskForm.value.id)
         if (error) {
@@ -243,7 +283,8 @@ const saveTask = async () => {
                 status: taskForm.value.status,
                 due_date: taskForm.value.due_date,
                 project_id: projectId,
-                assignee_id: user.value?.id
+                assignee_id: user.value?.id,
+                description: taskForm.value.description  
             }])
         if (error) {
             ElMessage.error('创建失败：' + error.message)
