@@ -92,7 +92,12 @@
                     <el-input v-model="taskForm.description" type="textarea" rows="3" placeholder="AI可自动生成描述" />
                 </el-form-item>
             </el-form>
-            <template #footer>...</template>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="dialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="saveTask">确定</el-button>
+                </span>
+            </template>
         </el-dialog>
     </div>
 </template>
